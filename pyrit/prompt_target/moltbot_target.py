@@ -116,16 +116,16 @@ class MoltbotTarget(PromptTarget):
         }
 
         # Add API key to headers if provided
-        headers = {}
+        headers = None
         if self._api_key:
-            headers["Authorization"] = f"Bearer {self._api_key}"
+            headers = {"Authorization": f"Bearer {self._api_key}"}
 
         resp = await net_utility.make_request_and_raise_if_error_async(
             endpoint_uri=self._send_endpoint,
             method="POST",
             request_body=payload,
             post_type="json",
-            headers=headers if headers else None,
+            headers=headers,
         )
 
         if not resp.text:
@@ -133,8 +133,14 @@ class MoltbotTarget(PromptTarget):
 
         try:
             json_response = resp.json()
-            # Extract the response based on expected API structure
-            # The actual response format may vary, so we try multiple common formats
+            # Extract the response based on expected API structure.
+            # Moltbot's API response format may vary depending on version and configuration.
+            # Common field names observed in the API:
+            # - "response": Standard response field in newer versions
+            # - "message": Alternative field name used in some configurations
+            # - "reply": Used in certain channel adapters
+            # - "text": Generic text response field
+            # If none of these fields exist, convert the entire response to string
             if isinstance(json_response, dict):
                 response_text = (
                     json_response.get("response")
