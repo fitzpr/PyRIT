@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 class MoltbotTarget(PromptTarget):
     """
     A prompt target for Moltbot/Clawdbot (OpenClaw) instances.
-    
+
     Moltbot (formerly Clawdbot) is an open-source, local AI agent that runs autonomously
     and can perform actions across different platforms. This target allows PyRIT to interact
     with and test Moltbot instances via their HTTP API.
-    
+
     More information: https://github.com/steinbergerbernd/moltbot
-    
+
     Args:
         endpoint_uri: The base URI of the Moltbot API (e.g., "http://localhost:18789").
         channel: The communication channel to send messages through (e.g., "cli", "telegram", "whatsapp").
@@ -46,11 +46,9 @@ class MoltbotTarget(PromptTarget):
         # Ensure endpoint doesn't have trailing slash
         self._base_endpoint = endpoint_uri.rstrip("/")
         self._send_endpoint = f"{self._base_endpoint}/api/send"
-        
+
         super().__init__(
-            max_requests_per_minute=max_requests_per_minute,
-            endpoint=self._send_endpoint,
-            model_name="moltbot"
+            max_requests_per_minute=max_requests_per_minute, endpoint=self._send_endpoint, model_name="moltbot"
         )
 
         self._channel = channel
@@ -60,13 +58,13 @@ class MoltbotTarget(PromptTarget):
     async def send_prompt_async(self, *, message: Message) -> list[Message]:
         """
         Send a prompt to the Moltbot instance.
-        
+
         Args:
             message: The message to send, containing one or more message pieces.
-            
+
         Returns:
             A list containing the response message from Moltbot.
-            
+
         Raises:
             ValueError: If the message format is invalid or the response is empty.
         """
@@ -77,45 +75,38 @@ class MoltbotTarget(PromptTarget):
 
         response = await self._send_message_async(request.converted_value)
 
-        response_entry = construct_response_from_request(
-            request=request,
-            response_text_pieces=[response]
-        )
+        response_entry = construct_response_from_request(request=request, response_text_pieces=[response])
 
         return [response_entry]
 
     def _validate_request(self, *, message: Message) -> None:
         """
         Validate that the request message is in the correct format.
-        
+
         Args:
             message: The message to validate.
-            
+
         Raises:
             ValueError: If the message has more than one piece or is not text.
         """
         n_pieces = len(message.message_pieces)
         if n_pieces != 1:
-            raise ValueError(
-                f"This target only supports a single message piece. Received: {n_pieces} pieces."
-            )
+            raise ValueError(f"This target only supports a single message piece. Received: {n_pieces} pieces.")
 
         piece_type = message.message_pieces[0].converted_value_data_type
         if piece_type != "text":
-            raise ValueError(
-                f"This target only supports text prompt input. Received: {piece_type}."
-            )
+            raise ValueError(f"This target only supports text prompt input. Received: {piece_type}.")
 
     async def _send_message_async(self, text: str) -> str:
         """
         Send a message to the Moltbot API and return the response.
-        
+
         Args:
             text: The message text to send.
-            
+
         Returns:
             The response text from Moltbot.
-            
+
         Raises:
             ValueError: If the response is empty or invalid.
         """
