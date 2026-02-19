@@ -14,6 +14,7 @@ from pyrit.executor.attack.multi_turn.multi_turn_attack_strategy import (
     MultiTurnAttackContext,
     MultiTurnAttackStrategy,
 )
+from pyrit.executor.attack.multi_turn.image_edit_attack import ImageEditAttack, IEASystemPromptPaths
 from pyrit.executor.attack.multi_turn.red_teaming import RedTeamingAttack, RTASystemPromptPaths
 from pyrit.executor.attack.multi_turn.simulated_conversation import (
     generate_simulated_conversation_async,
@@ -38,6 +39,8 @@ __all__ = [
     "CrescendoAttackResult",
     "RedTeamingAttack",
     "RTASystemPromptPaths",
+    "ImageEditAttack",
+    "IEASystemPromptPaths",
     "generate_simulated_conversation_async",
     "TreeOfAttacksWithPruningAttack",
     "TAPAttack",

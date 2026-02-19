@@ -181,6 +181,8 @@ API Reference
     CrescendoAttackResult
     FlipAttack
     generate_simulated_conversation_async
+    IEASystemPromptPaths
+    ImageEditAttack
     ManyShotJailbreakAttack
     MarkdownAttackResultPrinter
     MultiPromptSendingAttack
@@ -605,6 +607,7 @@ API Reference
     SelfAskRefusalScorer
     SelfAskScaleScorer
     SelfAskTrueFalseScorer
+    SelfAskVisualCritiqueScorer
     SubStringScorer
     TrueFalseAggregatorFunc
     TrueFalseCompositeScorer
@@ -615,6 +618,7 @@ API Reference
     TrueFalseScorer
     VideoFloatScaleScorer
     VideoTrueFalseScorer
+    VisualCritiqueQuestion
 
 :py:mod:`pyrit.scenario`
 =========================

@@ -21,6 +21,10 @@ from pyrit.score.float_scale.plagiarism_scorer import PlagiarismMetric, Plagiari
 from pyrit.score.float_scale.self_ask_general_float_scale_scorer import SelfAskGeneralFloatScaleScorer
 from pyrit.score.float_scale.self_ask_likert_scorer import LikertScaleEvalFiles, LikertScalePaths, SelfAskLikertScorer
 from pyrit.score.float_scale.self_ask_scale_scorer import SelfAskScaleScorer
+from pyrit.score.float_scale.self_ask_visual_critique_scorer import (
+    SelfAskVisualCritiqueScorer,
+    VisualCritiqueQuestion,
+)
 from pyrit.score.float_scale.video_float_scale_scorer import VideoFloatScaleScorer
 from pyrit.score.human.human_in_the_loop_gradio import HumanInTheLoopScorerGradio
 from pyrit.score.printer import ConsoleScorerPrinter, ScorerPrinter
@@ -123,6 +127,7 @@ __all__ = [
     "SelfAskRefusalScorer",
     "SelfAskScaleScorer",
     "SelfAskTrueFalseScorer",
+    "SelfAskVisualCritiqueScorer",
     "ScorerPrinter",
     "SubStringScorer",
     "TrueFalseCompositeScorer",
@@ -134,4 +139,5 @@ __all__ = [
     "TrueFalseScorer",
     "VideoFloatScaleScorer",
     "VideoTrueFalseScorer",
+    "VisualCritiqueQuestion",
 ]
