@@ -247,7 +247,7 @@ class AzureMLChatTarget(PromptChatTarget):
         # Parameters include additional ones passed in through **kwargs. Those not accepted by the model will
         # be ignored. We only include commonly supported parameters here - model-specific parameters like
         # stop sequences should be passed via **param_kwargs since different models use different EOS tokens.
-        data = {
+        return {
             "input_data": {
                 "input_string": messages_dict,
                 "parameters": {
@@ -259,8 +259,6 @@ class AzureMLChatTarget(PromptChatTarget):
                 | self._extra_parameters,
             }
         }
-
-        return data
 
     def _get_headers(self) -> dict[str, str]:
         """
