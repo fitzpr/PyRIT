@@ -18,7 +18,7 @@ from pyrit.common import default_values
 from pyrit.common.download_hf_model import download_specific_files
 from pyrit.exceptions import EmptyResponseException, pyrit_target_retry
 from pyrit.identifiers import TargetIdentifier
-from pyrit.models import Message, construct_response_from_request, PromptDataType
+from pyrit.models import Message, PromptDataType, construct_response_from_request
 from pyrit.prompt_target.common.prompt_chat_target import PromptChatTarget
 from pyrit.prompt_target.common.utils import limit_requests_per_minute
 
@@ -36,7 +36,7 @@ class HuggingFaceChatTarget(PromptChatTarget):
 
     #: HuggingFace targets typically only support text input for now
     SUPPORTED_INPUT_MODALITIES: set[frozenset[PromptDataType]] = {frozenset(["text"])}
-    
+
     #: HuggingFace targets typically only support text output for now
     SUPPORTED_OUTPUT_MODALITIES: set[frozenset[PromptDataType]] = {frozenset(["text"])}
 

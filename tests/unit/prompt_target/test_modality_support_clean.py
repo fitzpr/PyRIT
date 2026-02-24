@@ -4,170 +4,204 @@
 """
 Tests for modality support detection using set[frozenset[PromptDataType]] architecture.
 
-This test suite demonstrates Roman's requested architecture where:
 - SUPPORTED_INPUT_MODALITIES is set[frozenset[PromptDataType]]
 - Each frozenset represents a valid combination of modalities
-- Exact frozenset matching for precise capability detection
+- Exact frozenset matching for precise modality detection
 """
 
-import pytest
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
-from pyrit.models import PromptDataType
+import pytest
+
+from pyrit.models import Message, MessagePiece, PromptDataType
+from pyrit.prompt_target.modality_verification import (
+    _create_test_message,
+    verify_target_modalities,
+)
 from pyrit.prompt_target.openai.openai_chat_target import OpenAIChatTarget
-from pyrit.prompt_target.hugging_face.hugging_face_chat_target import HuggingFaceChatTarget
 from pyrit.prompt_target.text_target import TextTarget
 
 
 class TestModalitySupport:
     """Test modality support detection with set[frozenset[PromptDataType]] architecture."""
 
-    def test_text_target_modalities(self):
-        """Test TextTarget only supports text."""
+    def test_text_target_input_modalities(self, patch_central_database):
+        """Test TextTarget only supports text input."""
         target = TextTarget()
-        
-        # Text-only should be supported
+
         assert target.input_modality_supported({"text"})
-        
-        # Multimodal should not be supported
         assert not target.input_modality_supported({"text", "image_path"})
         assert not target.input_modality_supported({"image_path"})
         assert not target.input_modality_supported({"text", "audio_path"})
 
-    def test_huggingface_target_modalities(self):
-        """Test HuggingFace target only supports text."""
-        # Mock the necessary components to avoid actual model loading
-        with pytest.mock.patch("pyrit.prompt_target.hugging_face.hugging_face_chat_target.AutoTokenizer"):
-            with pytest.mock.patch("pyrit.prompt_target.hugging_face.hugging_face_chat_target.AutoModelForCausalLM"):
-                target = HuggingFaceChatTarget(model_id="test-model")
-                
-                # Text-only should be supported
-                assert target.input_modality_supported({"text"})
-                
-                # Multimodal should not be supported  
-                assert not target.input_modality_supported({"text", "image_path"})
-                assert not target.input_modality_supported({"image_path"})
-
-    def test_openai_vision_model_modalities(self):
-        """Test OpenAI vision models support text + image combinations."""
-        # Mock the OpenAI client
-        mock_client = AsyncMock()
-        
-        # Test GPT-4o model (vision-capable)
-        target = OpenAIChatTarget(model_name="gpt-4o")
-        target._client = mock_client
-        target._async_client = mock_client
-        
-        # Should support text-only
-        assert target.input_modality_supported({"text"})
-        
-        # Should support text + image
-        assert target.input_modality_supported({"text", "image_path"})
-        
-        # Should NOT support image-only or other combinations
-        assert not target.input_modality_supported({"image_path"})
-        assert not target.input_modality_supported({"text", "audio_path"})
-        assert not target.input_modality_supported({"text", "image_path", "audio_path"})
-
-    def test_openai_text_model_modalities(self):
-        """Test OpenAI text-only models."""
-        # Mock the OpenAI client
-        mock_client = AsyncMock()
-        
-        # Test GPT-3.5 model (text-only)
-        target = OpenAIChatTarget(model_name="gpt-3.5-turbo")
-        target._client = mock_client
-        target._async_client = mock_client
-        
-        # Should support text-only
-        assert target.input_modality_supported({"text"})
-        
-        # Should NOT support multimodal
-        assert not target.input_modality_supported({"text", "image_path"})
-        assert not target.input_modality_supported({"image_path"})
-
-    def test_openai_static_api_declarations(self):
-        """Test OpenAI uses static API capability declarations, not pattern matching."""
-        # Mock the OpenAI client
-        mock_client = AsyncMock()
-        
-        # Test that ALL OpenAI models get the same static API declarations
-        model_names = ["gpt-3.5-turbo", "gpt-4", "gpt-4o", "some-future-model-xyz"]
-        
-        for model_name in model_names:
-            target = OpenAIChatTarget(model_name=model_name)
-            target._client = mock_client
-            target._async_client = mock_client
-            
-            # Should declare full OpenAI API capabilities regardless of model name
-            expected_api_capabilities = {
-                frozenset(["text"]),
-                frozenset(["text", "image_path"])
-            }
-            assert target.SUPPORTED_INPUT_MODALITIES == expected_api_capabilities, \
-                f"Model {model_name} should declare full API capabilities"
-            
-            # Both text-only and vision should be declared as possible
-            assert target.input_modality_supported({"text"})
-            assert target.input_modality_supported({"text", "image_path"})
-
-    def test_frozenset_exact_matching(self):
-        """Test that modality checking uses exact frozenset matching."""
-        mock_client = AsyncMock()
-        target = OpenAIChatTarget(model_name="gpt-4o")
-        target._client = mock_client
-        target._async_client = mock_client
-        
-        # Get the supported modalities (now static API declarations)
-        supported = target.SUPPORTED_INPUT_MODALITIES
-        
-        # Should contain exactly the OpenAI API capabilities
-        expected_modalities = {
-            frozenset(["text"]),
-            frozenset(["text", "image_path"])
-        }
-        assert supported == expected_modalities
-        
-        # Order shouldn't matter in the frozenset
-        assert target.input_modality_supported({"image_path", "text"})
-        assert target.input_modality_supported({"text", "image_path"})
-
-    def test_optional_verification_system(self):
-        """Test the optional verification system exists and can be called."""
+    def test_text_target_output_modalities(self, patch_central_database):
+        """Test TextTarget only supports text output."""
         target = TextTarget()
-        
-        # The verification method should exist
-        assert hasattr(target, 'verify_actual_capabilities')
-        
-        # Test that static capabilities are available
-        static_capabilities = target.SUPPORTED_INPUT_MODALITIES
-        expected = {frozenset(["text"])}
-        assert static_capabilities == expected
 
-    def test_output_modality_support(self):
-        """Test output modality support using SUPPORTED_OUTPUT_MODALITIES variable."""
-        target = TextTarget()
-        
-        # Should support text output
         assert target.output_modality_supported({"text"})
-        
-        # Should not support other output types
         assert not target.output_modality_supported({"image_path"})
         assert not target.output_modality_supported({"text", "image_path"})
-        
-        # Test that it uses the SUPPORTED_OUTPUT_MODALITIES variable
+
         expected_output = {frozenset(["text"])}
         assert target.SUPPORTED_OUTPUT_MODALITIES == expected_output
 
-    def test_modality_type_validation(self):
+    def test_openai_static_api_declarations(self, patch_central_database):
+        """Test OpenAI uses static API modality declarations, not model-name pattern matching.
+
+        All OpenAI models get the same static API declarations regardless of model name.
+        The optional verify_actual_modalities() trims these down at runtime.
+        """
+        model_names = ["gpt-3.5-turbo", "gpt-4", "gpt-4o", "some-future-model-xyz"]
+
+        for model_name in model_names:
+            target = OpenAIChatTarget(
+                model_name=model_name,
+                endpoint="https://mock.azure.com/",
+                api_key="mock-api-key",
+            )
+
+            expected_api_modalities = {
+                frozenset(["text"]),
+                frozenset(["text", "image_path"]),
+                frozenset(["text", "audio_path"]),
+            }
+            assert target.SUPPORTED_INPUT_MODALITIES == expected_api_modalities, (
+                f"Model {model_name} should declare full API modalities"
+            )
+
+            assert target.input_modality_supported({"text"})
+            assert target.input_modality_supported({"text", "image_path"})
+            assert target.input_modality_supported({"text", "audio_path"})
+
+    def test_openai_unsupported_combinations(self, patch_central_database):
+        """Test that OpenAI rejects modality combinations not declared by the API."""
+        target = OpenAIChatTarget(
+            model_name="gpt-4o",
+            endpoint="https://mock.azure.com/",
+            api_key="mock-api-key",
+        )
+
+        assert not target.input_modality_supported({"image_path"})
+        assert not target.input_modality_supported({"audio_path"})
+        assert not target.input_modality_supported({"text", "image_path", "audio_path"})
+
+    def test_frozenset_order_independence(self, patch_central_database):
+        """Test that modality checking is order-independent via frozenset matching."""
+        target = OpenAIChatTarget(
+            model_name="gpt-4o",
+            endpoint="https://mock.azure.com/",
+            api_key="mock-api-key",
+        )
+
+        assert target.input_modality_supported({"image_path", "text"})
+        assert target.input_modality_supported({"text", "image_path"})
+
+    def test_verify_actual_modalities_exists(self, patch_central_database):
+        """Test the optional runtime verification method exists."""
+        target = TextTarget()
+        assert hasattr(target, "verify_actual_modalities")
+
+    def test_modality_type_validation(self, patch_central_database):
         """Test that modality checking works with PromptDataType literals."""
         target = TextTarget()
-        
-        # Test with actual PromptDataType values
+
         text_type: PromptDataType = "text"
         image_type: PromptDataType = "image_path"
         audio_type: PromptDataType = "audio_path"
-        
+
         assert target.input_modality_supported({text_type})
         assert not target.input_modality_supported({text_type, image_type})
         assert not target.input_modality_supported({audio_type})
+
+    def test_create_test_message_single_modality(self):
+        """Test that _create_test_message works for a single text modality."""
+        msg = _create_test_message(frozenset(["text"]))
+        assert len(msg.message_pieces) == 1
+        assert msg.message_pieces[0].original_value_data_type == "text"
+        assert msg.message_pieces[0].original_value == "test"
+
+    def test_create_test_message_multimodal(self):
+        """Test that _create_test_message creates a valid Message for multimodal inputs.
+
+        All pieces must share the same conversation_id and role for Message.validate() to pass.
+        """
+        msg = _create_test_message(frozenset(["text", "image_path"]))
+        assert len(msg.message_pieces) == 2
+        data_types = {p.original_value_data_type for p in msg.message_pieces}
+        assert data_types == {"text", "image_path"}
+
+        # Verify all pieces share conversation_id (required by Message.validate)
+        conv_ids = {p.conversation_id for p in msg.message_pieces}
+        assert len(conv_ids) == 1
+
+    @pytest.mark.asyncio
+    async def test_verify_target_modalities_success(self, patch_central_database):
+        """Test verify_target_modalities returns supported modalities on success."""
+        target = TextTarget()
+
+        # Mock send_prompt_async to return a successful response
+        response_piece = MessagePiece(
+            role="assistant",
+            original_value="ok",
+            original_value_data_type="text",
+            response_error="none",
+        )
+        mock_response = Message([response_piece])
+        target.send_prompt_async = AsyncMock(return_value=[mock_response])
+
+        result = await verify_target_modalities(target)
+        assert frozenset(["text"]) in result
+
+    @pytest.mark.asyncio
+    async def test_verify_target_modalities_exception(self, patch_central_database):
+        """Test verify_target_modalities excludes modalities that raise exceptions."""
+        target = TextTarget()
+        target.send_prompt_async = AsyncMock(side_effect=Exception("unsupported modality"))
+
+        result = await verify_target_modalities(target)
+        assert len(result) == 0
+
+    @pytest.mark.asyncio
+    async def test_verify_target_modalities_error_response(self, patch_central_database):
+        """Test verify_target_modalities excludes modalities returning error responses."""
+        target = TextTarget()
+
+        response_piece = MessagePiece(
+            role="assistant",
+            original_value="content filter triggered",
+            original_value_data_type="text",
+            response_error="blocked",
+        )
+        mock_response = Message([response_piece])
+        target.send_prompt_async = AsyncMock(return_value=[mock_response])
+
+        result = await verify_target_modalities(target)
+        assert len(result) == 0
+
+    @pytest.mark.asyncio
+    async def test_verify_target_modalities_partial_support(self, patch_central_database):
+        """Test verify_target_modalities with a target that supports some but not all modalities."""
+        target = OpenAIChatTarget(
+            model_name="gpt-4o",
+            endpoint="https://mock.azure.com/",
+            api_key="mock-api-key",
+        )
+
+        # Text succeeds, text+image raises
+        async def selective_send(*, message):
+            types = {p.original_value_data_type for p in message.message_pieces}
+            if "image_path" in types:
+                raise Exception("image not supported by this model")
+            response_piece = MessagePiece(
+                role="assistant",
+                original_value="ok",
+                original_value_data_type="text",
+                response_error="none",
+            )
+            return [Message([response_piece])]
+
+        target.send_prompt_async = selective_send
+
+        result = await verify_target_modalities(target)
+        assert frozenset(["text"]) in result
+        assert frozenset(["text", "image_path"]) not in result

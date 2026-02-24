@@ -66,13 +66,15 @@ class OpenAIChatTarget(OpenAITarget, PromptChatTarget):
     #: OpenAI Chat API supports these input modality combinations
     #: This represents what the API can handle, not what specific models support
     SUPPORTED_INPUT_MODALITIES: set[frozenset[PromptDataType]] = {
-        frozenset(["text"]),           # All models support text-only
-        frozenset(["text", "image_path"])  # API supports vision when model does
+        frozenset(["text"]),  # All models support text-only
+        frozenset(["text", "image_path"]),  # API supports vision when model does
+        frozenset(["text", "audio_path"]),  # API supports audio input when model does
     }
-    
+
     #: OpenAI Chat API output modalities
     SUPPORTED_OUTPUT_MODALITIES: set[frozenset[PromptDataType]] = {
-        frozenset(["text"])  # Currently only text output
+        frozenset(["text"]),  # Currently only text output
+        frozenset(["audio_path"]),  # Audio output when audio_response_config is set
     }
 
     def __init__(
